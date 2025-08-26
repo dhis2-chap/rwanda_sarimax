@@ -1,4 +1,6 @@
-name: min_py_ex
+name: rwanda_sarimax
+
+python_env: pyenv.yaml
 
 entry_points:
   train:
