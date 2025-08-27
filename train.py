@@ -22,10 +22,21 @@ def train_for_district(district_df):
         Y, 
         exog=train_exog,
         order=my_order, 
-        seasonal_order=my_seasonal_order
+        seasonal_order=my_seasonal_order,
+        enforce_stationarity=False
     )
 
+    # assert no NaNs in exog or Y
+    assert not Y.isnull().any(), "Y contains NaNs"
+    assert not train_exog.isnull().any().any(), "train_exog contains NaNs"
+
     # Fit the model
+    #print("")
+    #print("______________________________________________")
+    #print(Y)
+    #print(train_exog)
+    # show the whole train_exog, not truncated
+    #print(train_exog.to_string())
     model_fit = model.fit()
     return model_fit
 

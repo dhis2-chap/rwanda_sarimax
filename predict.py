@@ -2,6 +2,8 @@ import argparse
 
 import joblib
 import pandas as pd
+import numpy as np
+
 
 def predict(model_fn, historic_data_fn, future_climatedata_fn, predictions_fn):
     # get all unique districts from historic data
@@ -11,18 +13,42 @@ def predict(model_fn, historic_data_fn, future_climatedata_fn, predictions_fn):
     final_predictions_df = pd.DataFrame()
 
     for district in districts:
-        model_file_name = model_fn + "_" + district + ".bin"
+        model_file_name = f"{model_fn}_{district}.bin"
         model = joblib.load(model_file_name)
-        future_data_for_district = df[df['location'] == district]
+
+        future_data_for_district = df.loc[df["location"] == district].copy()
+        assert len(future_data_for_district) > 0, f"No future data for district {district}"
+
         print(f"Loaded model for district {district} from {model_file_name}")
-        predictions = model.forecast(steps=len(future_data_for_district), exog=future_data_for_district[['rainfall', 'mean_temperature']])
-        samples_0 = predictions
-        #predictions = pd.Series(predictions, index=test_data.index)
 
-        # put future data for district into final_predictions_df with a new column 'sample_0' containing the predictions
-        future_data_for_district['sample_0'] = samples_0
-        final_predictions_df = pd.concat([final_predictions_df, future_data_for_district])
+        # Forecast
+        steps = len(future_data_for_district)
+        exog = future_data_for_district[["rainfall", "mean_temperature"]]
+        predictions = model.forecast(steps=steps, exog=exog)
+        assert not pd.isnull(predictions).any(), f"Predictions contain NaNs for district {district}"
 
+        preds = np.asarray(predictions).reshape(-1)
+        if preds.shape[0] != steps:
+            raise ValueError(
+                f"Prediction length {preds.shape[0]} != future rows {steps} for district {district}"
+            )
+
+
+        future_data_for_district.loc[:, "sample_0"] = preds
+
+        assert len(predictions) == steps, (
+            f"Number of predictions {len(predictions)} does not match "
+            f"length of future data {steps} for district {district}"
+        )
+
+        print("____ predictions for district", district, "________")
+        print(future_data_for_district)
+
+        # Collect for later concat (concat once is faster, but this works too)
+        final_predictions_df = pd.concat([final_predictions_df, future_data_for_district], ignore_index=False)
+
+    #print(final_predictions_df)
+    print("Writing final predictions to ", predictions_fn)
     final_predictions_df.to_csv(predictions_fn, index=False)
 
 
