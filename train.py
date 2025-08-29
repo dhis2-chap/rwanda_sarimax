@@ -1,4 +1,5 @@
 import argparse
+import os
 import joblib
 import pandas as pd
 from statsmodels.tsa.statespace.sarimax import SARIMAX
@@ -42,6 +43,8 @@ def train_for_district(district_df):
 
 
 def train(csv_fn, model_fn):
+    print("Reading data from ", csv_fn)
+    print("Current working directory: ", os.getcwd())
     df = pd.read_csv(csv_fn)
 
     # split df into one df per distinct location

@@ -1,11 +1,16 @@
 import argparse
-
+import os
 import joblib
 import pandas as pd
 import numpy as np
 
 
 def predict(model_fn, historic_data_fn, future_climatedata_fn, predictions_fn):
+    print("___")
+    print("___")
+    print("___")
+    print("Running prediction, will write results to ", predictions_fn)
+    print("Current working directory: ", os.getcwd())
     # get all unique districts from historic data
     df = pd.read_csv(future_climatedata_fn)
     districts = pd.read_csv(historic_data_fn)['location'].unique()
